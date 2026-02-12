@@ -329,12 +329,18 @@ class CommandRunner:
 
         # Create output directory structure: YYYY/MM/
         month_dir = f'exports/{guild["guildName"]}/{year_str}/{month_num}'
+        completion_marker = os.path.join(month_dir, '.complete')
 
-        # Check if directory exists and has files (skip if already backed up)
-        if os.path.exists(month_dir) and os.listdir(month_dir):
-            logger.info(f'    Directory {month_dir} already exists with files, skipping')
+        # Check if backup was previously completed successfully
+        if os.path.exists(completion_marker):
+            logger.info(f'    Month {month_str} already completed (found .complete marker), skipping')
             self.tracker.mark_month_completed(guild['guildId'], month_str)
             return True
+
+        # Warn if directory exists without completion marker (incomplete backup)
+        if os.path.exists(month_dir) and os.listdir(month_dir):
+            logger.warning(f'    Directory {month_dir} exists without .complete marker (incomplete backup detected)')
+            logger.info(f'    Re-running backup for {month_str} to ensure completeness')
 
         # Create month directory if needed
         try:
@@ -392,7 +398,17 @@ class CommandRunner:
                         logger.warning(f"    DCE stderr: {line}")
 
             if return_code == 0:
+                # Mark month as completed in metadata
                 self.tracker.mark_month_completed(guild['guildId'], month_str)
+
+                # Create completion marker file
+                try:
+                    with open(completion_marker, 'w') as f:
+                        f.write(f'Completed: {datetime.now(timezone.utc).isoformat()}\n')
+                    logger.debug(f'    Created completion marker: {completion_marker}')
+                except IOError as e:
+                    logger.warning(f'    Failed to create completion marker: {e}')
+
                 logger.info(f'    ✓ Successfully exported {month_str}')
                 return True
             else:
