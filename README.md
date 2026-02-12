@@ -31,8 +31,7 @@ docker pull ghcr.io/pewter77/discordchatexporter-monthly:latest
 
 **Available tags:**
 - `latest` - Latest stable release
-- `0.0.1`, `0.0`, `0` - Specific semantic version tags
-- `v0.0.1` - Version with v prefix
+- `0.0.3`, `0.0`, `0` - Semantic version tags (see [releases](https://github.com/pewter77/DiscordChatExporter-Monthly/releases) for all versions)
 
 ### Option 2: Build from Source
 
