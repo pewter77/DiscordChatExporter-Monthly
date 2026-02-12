@@ -1,0 +1,33 @@
+# Sensitive configuration
+config.json
+config/
+
+# Backup exports
+exports/
+
+# DiscordChatExporter dependency (no longer needed)
+dce/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# AI Assistant files
+.claude/
+.cursor/
+.copilot/
+.aider/
+.continue/
+.sourcegraph/
+.ai/
+.anthropic/
+.openai/
+.vscode-copilot/
+*.prompt
+*.ai-context

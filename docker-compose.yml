@@ -1,0 +1,37 @@
+---
+services:
+  discord-backup:
+    build: .
+    container_name: discord-backup
+    restart: unless-stopped
+    environment:
+      # Cron schedule (default: daily at 00:13)
+      # Format: minute hour day month weekday
+      # Examples:
+      #   "13 0 * * *"    - Daily at 00:13 (12:13 AM)
+      #   "0 */6 * * *"   - Every 6 hours
+      #   "0 0 * * *"     - Daily at midnight
+      #   "0 */12 * * *"  - Every 12 hours
+      CRON_SCHEDULE: "13 0 * * *"
+
+      # User/Group IDs (match your host user for proper permissions)
+      # Find your IDs with: id -u (for UID) and id -g (for GID)
+      PUID: 1000
+      PGID: 1000
+
+      # Timezone for scheduling (important for accurate backup times)
+      TZ: "America/New_York"
+
+    volumes:
+      # Mount your config directory (contains config.json)
+      - ./config:/app/config:ro
+
+      # Mount exports directory (where backups are saved)
+      - ./exports:/app/exports
+
+    # Optional: limit resources
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '2'
+    #       memory: 4G

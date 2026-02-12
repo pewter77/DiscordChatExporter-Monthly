@@ -1,0 +1,26 @@
+{
+    "tokens": [
+        {
+            "name": "MyBotToken",
+            "value": "YOUR_DISCORD_TOKEN_HERE"
+        }
+    ],
+    "guilds": [
+        {
+            "tokenName": "MyBotToken",
+            "guildId": "123456789012345678",
+            "guildName": "MyServerName",
+            "startDate": "2020-01",
+            "enabled": true,
+            "throttleHours": 23.5
+        },
+        {
+            "tokenName": "MyBotToken",
+            "guildId": "@me",
+            "guildName": "DirectMessages",
+            "startDate": "2021-01",
+            "enabled": true,
+            "throttleHours": 23.5
+        }
+    ]
+}
