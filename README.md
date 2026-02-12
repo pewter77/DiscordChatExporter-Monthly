@@ -1,7 +1,7 @@
 # Discord Backup Docker
 
-[![Docker Image CI](https://github.com/pewter77/discord-backup-docker/actions/workflows/docker-build-publish.yml/badge.svg)](https://github.com/pewter77/discord-backup-docker/actions/workflows/docker-build-publish.yml)
-[![GitHub release](https://img.shields.io/github/v/release/pewter77/discord-backup-docker)](https://github.com/pewter77/discord-backup-docker/releases)
+[![Docker Image CI](https://github.com/pewter77/DiscordChatExporter-Monthly/actions/workflows/docker-build-publish.yml/badge.svg)](https://github.com/pewter77/DiscordChatExporter-Monthly/actions/workflows/docker-build-publish.yml)
+[![GitHub release](https://img.shields.io/github/v/release/pewter77/DiscordChatExporter-Monthly)](https://github.com/pewter77/DiscordChatExporter-Monthly/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A self-contained Docker solution for automatically backing up Discord servers and direct messages using [DiscordChatExporter](https://github.com/Tyrrrz/DiscordChatExporter). Backups run on startup and on a configurable cron schedule.
@@ -24,7 +24,7 @@ A self-contained Docker solution for automatically backing up Discord servers an
 Pull the latest image directly from GitHub Container Registry:
 
 ```bash
-docker pull ghcr.io/pewter77/discord-backup-docker:latest
+docker pull ghcr.io/pewter77/discordchatexporter-monthly:latest
 ```
 
 **Available tags:**
@@ -37,8 +37,8 @@ docker pull ghcr.io/pewter77/discord-backup-docker:latest
 Clone and build locally:
 
 ```bash
-git clone https://github.com/pewter77/discord-backup-docker.git
-cd discord-backup-docker
+git clone https://github.com/pewter77/DiscordChatExporter-Monthly.git
+cd DiscordChatExporter-Monthly
 docker-compose up --build -d
 ```
 
@@ -105,7 +105,7 @@ docker run -d \
   -e CRON_SCHEDULE="13 0 * * *" \
   -e PUID=1000 \
   -e PGID=1000 \
-  ghcr.io/pewter77/discord-backup-docker:latest
+  ghcr.io/pewter77/discordchatexporter-monthly:latest
 ```
 
 **Or with docker-compose:**
@@ -116,7 +116,7 @@ Create `docker-compose.yml`:
 ---
 services:
   discord-backup:
-    image: ghcr.io/pewter77/discord-backup-docker:latest
+    image: ghcr.io/pewter77/discordchatexporter-monthly:latest
     container_name: discord-backup
     restart: unless-stopped
     environment:
