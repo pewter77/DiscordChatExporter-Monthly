@@ -66,10 +66,9 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
-            type=semver,pattern=v{{version}}
             type=ref,event=branch
             type=ref,event=pr
-            type=sha,prefix={{branch}}-
+            type=sha
           labels: |
             org.opencontainers.image.title=Discord Backup Docker
             org.opencontainers.image.description=Automated Discord server and DM backup solution using DiscordChatExporter
