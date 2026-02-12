@@ -331,8 +331,6 @@ Discord tokens can expire or become invalid:
 - User tokens: May need to re-authenticate
 - Bot tokens: Check Discord Developer Portal
 
-Get your token: [Discord Token Guide](https://github.com/Tyrrrz/DiscordChatExporter/wiki/Obtaining-Token-and-Channel-IDs)
-
 ## Security Considerations
 
 1. **Protect Your Tokens**
@@ -345,15 +343,6 @@ Get your token: [Discord Token Guide](https://github.com/Tyrrrz/DiscordChatExpor
    - No ports exposed
    - Minimal Alpine Linux base image
 
-## Migration from Standalone Script
-
-If you were using the Python script directly:
-
-1. **Preserve Existing Backups**: Just mount your existing `exports/` directory
-2. **Config Structure**: No changes needed to `config.json`
-3. **Metadata**: Your `exports/metadata.json` will be preserved
-4. **Old Files**: Can delete the `dce/` folder (no longer needed)
-
 ## Advanced Usage
 
 ### Dry Run Testing
@@ -364,18 +353,6 @@ To test without making actual backups:
 2. Rebuild container: `docker-compose up --build -d`
 3. Check logs to verify behavior
 4. Set back to `False` for real backups
-
-### Resource Limits
-
-Uncomment the `deploy` section in [docker-compose.yml](docker-compose.yml) to limit resources:
-
-```yaml
-deploy:
-  resources:
-    limits:
-      cpus: '2'
-      memory: 4G
-```
 
 ### Multiple Tokens
 
