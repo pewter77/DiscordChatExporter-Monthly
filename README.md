@@ -6,6 +6,8 @@
 
 A self-contained Docker solution for automatically backing up Discord servers and direct messages using [DiscordChatExporter](https://github.com/Tyrrrz/DiscordChatExporter). Backups run on startup and on a configurable cron schedule.
 
+> **Important**: This tool creates **full month backups** (organized by YYYY-MM). The cron schedule controls how often the script checks for new months to backup, not how often individual messages are backed up. The backup process runs both on container startup and according to the configured cron schedule.
+
 ## Features
 
 - 🐳 **Single Docker Image** - Everything bundled: DiscordChatExporter CLI + Python backup logic
