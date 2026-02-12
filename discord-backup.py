@@ -253,6 +253,9 @@ class CommandRunner:
         total_guilds = len(self.config.guilds)
         logger.info(f"Starting backup for {total_guilds} guild(s)")
 
+        # Backfill .complete markers for existing backups
+        self.backfill_completion_markers()
+
         guilds_processed = 0
         guilds_skipped = 0
         total_months_backed_up = 0
@@ -315,6 +318,60 @@ class CommandRunner:
         logger.info(f"  Total months backed up: {total_months_backed_up}")
         logger.info("=" * 50)
 
+    def backfill_completion_markers(self) -> None:
+        """
+        Create .complete markers for existing backups that are marked complete
+        in metadata.json but don't have the filesystem marker.
+        This handles backups completed before the marker feature was added.
+        """
+        logger.info("Checking for missing .complete markers in existing backups...")
+
+        backfilled_count = 0
+        checked_count = 0
+
+        for guild in self.config.guilds:
+            guild_id = guild['guildId']
+            guild_name = guild['guildName']
+
+            # Get all months marked as completed in metadata
+            completed_months = self.tracker.get_completed_months(guild_id)
+
+            if not completed_months:
+                continue
+
+            logger.debug(f"  Checking {len(completed_months)} completed month(s) for {guild_name}")
+
+            for month_str in completed_months:
+                checked_count += 1
+
+                # Parse month to build directory path
+                year, month = parse_month(month_str)
+                year_str = f"{year:04d}"
+                month_num = f"{month:02d}"
+
+                # Build paths
+                month_dir = f'exports/{guild_name}/{year_str}/{month_num}'
+                completion_marker = os.path.join(month_dir, '.complete')
+
+                # Check if directory exists but marker doesn't
+                if os.path.exists(month_dir) and not os.path.exists(completion_marker):
+                    # Backfill the marker
+                    try:
+                        with open(completion_marker, 'w', encoding='utf-8') as f:
+                            f.write(f'Completed: {datetime.now(timezone.utc).isoformat()}\n')
+                            f.write(f'Guild: {guild_id}\n')
+                            f.write(f'Month: {month_str}\n')
+                            f.write(f'Backfilled: true\n')
+                        logger.info(f"  ✓ Backfilled .complete marker for {guild_name}/{month_str}")
+                        backfilled_count += 1
+                    except (IOError, OSError) as e:
+                        logger.warning(f"  Failed to backfill marker for {guild_name}/{month_str}: {e}")
+
+        if backfilled_count > 0:
+            logger.info(f"Backfilled {backfilled_count} .complete marker(s) from {checked_count} completed month(s)")
+        else:
+            logger.info(f"All {checked_count} completed month(s) already have .complete markers")
+
     def _export_month(self, guild: dict, month_str: str) -> bool:
         """
         Export a single month for a guild
@@ -331,7 +388,24 @@ class CommandRunner:
         month_dir = f'exports/{guild["guildName"]}/{year_str}/{month_num}'
         completion_marker = os.path.join(month_dir, '.complete')
 
-        # Check if backup was previously completed successfully
+        # Check if month is already marked complete in metadata (edge case inline backfill)
+        if self.tracker.is_month_completed(guild['guildId'], month_str):
+            # Create marker if it doesn't exist (shouldn't happen due to startup backfill, but just in case)
+            if not os.path.exists(completion_marker) and os.path.exists(month_dir):
+                try:
+                    with open(completion_marker, 'w', encoding='utf-8') as f:
+                        f.write(f'Completed: {datetime.now(timezone.utc).isoformat()}\n')
+                        f.write(f'Guild: {guild["guildId"]}\n')
+                        f.write(f'Month: {month_str}\n')
+                        f.write(f'Backfilled: true\n')
+                    logger.info(f'    Month marked complete in metadata but missing .complete marker, created marker')
+                except (IOError, OSError) as e:
+                    logger.warning(f'    Failed to create completion marker: {e}')
+            else:
+                logger.info(f'    Month {month_str} already completed (found .complete marker), skipping')
+            return True
+
+        # Check if backup was previously completed successfully (marker exists)
         if os.path.exists(completion_marker):
             logger.info(f'    Month {month_str} already completed (found .complete marker), skipping')
             self.tracker.mark_month_completed(guild['guildId'], month_str)
@@ -403,10 +477,13 @@ class CommandRunner:
 
                 # Create completion marker file
                 try:
-                    with open(completion_marker, 'w') as f:
+                    with open(completion_marker, 'w', encoding='utf-8') as f:
                         f.write(f'Completed: {datetime.now(timezone.utc).isoformat()}\n')
-                    logger.debug(f'    Created completion marker: {completion_marker}')
-                except IOError as e:
+                        f.write(f'Guild: {guild["guildId"]}\n')
+                        f.write(f'Month: {month_str}\n')
+                        f.write(f'Type: {guild["type"]}\n')
+                    logger.info(f'    Created .complete marker file')
+                except (IOError, OSError) as e:
                     logger.warning(f'    Failed to create completion marker: {e}')
 
                 logger.info(f'    ✓ Successfully exported {month_str}')
