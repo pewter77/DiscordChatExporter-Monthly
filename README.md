@@ -402,4 +402,6 @@ You can define multiple tokens for different servers:
 
 ## License
 
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
 This project is provided as-is for personal backup purposes. Please respect Discord's Terms of Service when using this tool.
