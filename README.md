@@ -414,6 +414,14 @@ You can define multiple tokens for different servers:
 - Python backup script with monthly archival and metadata tracking
 - Docker containerization for easy deployment
 
+## Disclaimer
+
+**Personal Project**: This is a personal project created and shared to help others with Discord backup automation.
+
+**GenAI Assistance**: This project was developed with the assistance of generative AI tools.
+
+**Limited Support**: This project is provided as-is with limited support. While issues and pull requests are welcome, response times may vary.
+
 ## License
 
 This project is provided as-is for personal backup purposes. Please respect Discord's Terms of Service when using this tool.
