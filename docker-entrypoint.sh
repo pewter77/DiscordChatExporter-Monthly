@@ -52,8 +52,10 @@ fi
 
 # Set up cron job
 log "Setting up cron schedule: $CRON_SCHEDULE"
-CRON_JOB="$CRON_SCHEDULE cd /app && python3 discord-backup.py >> /var/log/cron/cron.log 2>&1"
-echo "$CRON_JOB" > /etc/crontabs/root
+{
+    echo "CRON_TZ=$TZ"
+    echo "$CRON_SCHEDULE cd /app && python3 discord-backup.py >> /var/log/cron/cron.log 2>&1"
+} > /etc/crontabs/root
 
 # Run backup immediately on startup
 log "Running initial backup..."
