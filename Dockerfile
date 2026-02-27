@@ -1,4 +1,4 @@
-FROM tyrrrz/discordchatexporter:2.46
+FROM tyrrrz/discordchatexporter:2.47
 
 # Install Python and cron daemon
 RUN apk add --no-cache python3 dcron tzdata
