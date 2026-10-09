@@ -50,11 +50,18 @@ if [ -n "$TZ" ]; then
     echo "$TZ" > /etc/timezone
 fi
 
+# Cron jobs don't inherit the container environment, so pass HEALTHCHECK_URL explicitly
+CRON_ENV=""
+if [ -n "$HEALTHCHECK_URL" ]; then
+    log "Health check pings enabled"
+    CRON_ENV="HEALTHCHECK_URL='$HEALTHCHECK_URL' "
+fi
+
 # Set up cron job
 log "Setting up cron schedule: $CRON_SCHEDULE"
 {
     echo "CRON_TZ=$TZ"
-    echo "$CRON_SCHEDULE cd /app && python3 discord-backup.py >> /var/log/cron/cron.log 2>&1"
+    echo "$CRON_SCHEDULE cd /app && ${CRON_ENV}python3 discord-backup.py >> /var/log/cron/cron.log 2>&1"
 } > /etc/crontabs/root
 
 # Run backup immediately on startup

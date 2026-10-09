@@ -22,6 +22,9 @@ services:
       # Timezone for scheduling (important for accurate backup times)
       TZ: "America/New_York"
 
+      # Optional: Healthchecks ping URL for success/failure monitoring
+      # HEALTHCHECK_URL: "https://hc-ping.com/your-check-uuid"
+
     volumes:
       # Mount your config directory (contains config.json)
       - ./config:/app/config:ro
