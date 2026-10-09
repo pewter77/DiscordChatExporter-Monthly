@@ -4,6 +4,9 @@ import logging
 import os
 import re
 import subprocess
+import time
+import urllib.error
+import urllib.request
 
 # Configure logging with timestamps
 logging.basicConfig(
@@ -15,6 +18,32 @@ logger = logging.getLogger(__name__)
 
 # dry run option for development
 DRY_RUN = False
+
+# Optional Healthchecks-style ping URL (healthchecks.io or self-hosted)
+HEALTHCHECK_URL = os.environ.get('HEALTHCHECK_URL', '').strip().rstrip('/')
+
+
+def ping_healthcheck(suffix: str = '', message: str = '') -> None:
+    """
+    Ping HEALTHCHECK_URL + suffix ('' = success, '/start', '/fail'), sending message as the body.
+    Never raises: a monitoring outage must not break the backup itself.
+    The URL is never logged because its UUID is effectively a secret.
+    """
+    if not HEALTHCHECK_URL:
+        return
+    label = suffix.lstrip('/') or 'success'
+    request = urllib.request.Request(HEALTHCHECK_URL + suffix, data=message.encode('utf-8')[:100_000], method='POST')
+    for attempt in range(1, 4):
+        try:
+            with urllib.request.urlopen(request, timeout=10):
+                pass
+            logger.info(f"Sent health check ping: {label}")
+            return
+        except (urllib.error.URLError, OSError) as e:
+            logger.warning(f"Health check ping '{label}' failed (attempt {attempt}/3): {e}")
+            if attempt < 3:
+                time.sleep(5)
+    logger.error(f"Giving up on health check ping '{label}'")
 
 class Config:
     def __init__(self, config_path='config.json'):
@@ -249,7 +278,11 @@ class CommandRunner:
         dce_command = re.sub(r'--token "(.{5})[^"]+"', r'--token "\1***"', dce_command)
         return dce_command
 
-    def export(self) -> None:
+    def export(self) -> tuple:
+        """
+        Back up every enabled guild
+        Returns (months_backed_up, months_failed) across all guilds
+        """
         total_guilds = len(self.config.guilds)
         logger.info(f"Starting backup for {total_guilds} guild(s)")
 
@@ -259,6 +292,7 @@ class CommandRunner:
         guilds_processed = 0
         guilds_skipped = 0
         total_months_backed_up = 0
+        total_months_failed = 0
 
         for guild in self.config.guilds:
             logger.info(f'Processing guild: {guild["guildName"]} ({guild["guildId"]})')
@@ -302,6 +336,7 @@ class CommandRunner:
 
             if months_failed > 0:
                 logger.warning(f'  {months_failed} month(s) failed to backup')
+                total_months_failed += months_failed
 
             # Update last attempt timestamp after processing
             if months_backed_up > 0:
@@ -316,7 +351,10 @@ class CommandRunner:
         logger.info(f"  Guilds processed: {guilds_processed}/{total_guilds}")
         logger.info(f"  Guilds skipped (throttled): {guilds_skipped}")
         logger.info(f"  Total months backed up: {total_months_backed_up}")
+        logger.info(f"  Total months failed: {total_months_failed}")
         logger.info("=" * 50)
+
+        return total_months_backed_up, total_months_failed
 
     def backfill_completion_markers(self) -> None:
         """
@@ -496,13 +534,11 @@ class CommandRunner:
             return False
 
 
-def main():
-    start_time = datetime.now(timezone.utc)
-    logger.info("=" * 60)
-    logger.info("Discord Backup Script Starting")
-    logger.info(f"Start time: {start_time.isoformat()}")
-    logger.info("=" * 60)
-
+def run_backup() -> tuple:
+    """
+    Load config and run the export
+    Returns (months_backed_up, months_failed)
+    """
     try:
         os.makedirs('exports', exist_ok=True)
     except OSError as e:
@@ -515,7 +551,29 @@ def main():
     logger.info(f"Loaded {len(config.guilds)} guild(s) from configuration")
 
     command_runner = CommandRunner(config=config, tracker=tracker)
-    command_runner.export()
+    return command_runner.export()
+
+
+def main():
+    start_time = datetime.now(timezone.utc)
+    logger.info("=" * 60)
+    logger.info("Discord Backup Script Starting")
+    logger.info(f"Start time: {start_time.isoformat()}")
+    logger.info("=" * 60)
+
+    ping_healthcheck('/start')
+
+    # Config validation and setup errors call exit(1), so catch SystemExit as well as crashes
+    try:
+        months_backed_up, months_failed = run_backup()
+    except SystemExit as e:
+        if e.code not in (None, 0):
+            ping_healthcheck('/fail', 'Backup aborted before exporting (invalid config or setup error), see container logs')
+        raise
+    except Exception as e:
+        logger.error(f"Backup crashed: {e}", exc_info=True)
+        ping_healthcheck('/fail', f'Backup crashed: {e}')
+        exit(1)
 
     end_time = datetime.now(timezone.utc)
     duration = end_time - start_time
@@ -525,6 +583,12 @@ def main():
     logger.info(f"End time: {end_time.isoformat()}")
     logger.info(f"Total duration: {duration}")
     logger.info("=" * 60)
+
+    summary = f'{months_backed_up} month(s) backed up, {months_failed} failed, duration {duration}'
+    if months_failed > 0:
+        ping_healthcheck('/fail', summary)
+        exit(1)
+    ping_healthcheck('', summary)
 
 
 if __name__ == '__main__':
